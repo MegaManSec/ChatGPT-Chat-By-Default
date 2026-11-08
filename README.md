@@ -59,7 +59,7 @@ Bump `version` in `package.json` and merge it to `main`. When that version has n
 | TestFlight / App Store | Uploads the iOS and macOS apps to App Store Connect.                                                                                                    | `APPLE_TEAM_ID`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8`                                      |
 | Notarized macOS app    | Signs the app with Developer ID, notarizes and staples it, and attaches it to the GitHub Release.                                                       | The four Apple secrets, plus `DEVELOPER_ID_P12` and `DEVELOPER_ID_P12_PASSWORD`                   |
 
-The publishing jobs run in the `release` environment, so you can keep the secrets there and add protection rules. Release files get [build provenance attestations](https://docs.github.com/actions/security-for-github-actions/using-artifact-attestations), and `gh attestation verify <file> --repo MegaManSec/chatgpt-chat-by-default` checks that a download came from this workflow.
+Put the secrets in the `release` environment, not the repository secrets. Only runs on `main` can use it. Release files get [build provenance attestations](https://docs.github.com/actions/security-for-github-actions/using-artifact-attestations), and `gh attestation verify <file> --repo MegaManSec/chatgpt-chat-by-default` checks that a download came from this workflow.
 
 The macOS jobs run on GitHub's `xcode-27` runner, which is still in preview. `macos-26` only has Xcode 26, and that can't open this project.
 
