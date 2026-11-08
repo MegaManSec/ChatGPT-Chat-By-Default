@@ -1,12 +1,12 @@
 # Chat by Default
 
+| Browser                                                                                                                               | Install from                                         |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| <img src="https://cdn.jsdelivr.net/gh/alrra/browser-logos@75.0.1/src/chrome/chrome_64x64.png" width="32" height="32" alt="Chrome">    | Chrome Web Store (coming soon)                       |
+| <img src="https://cdn.jsdelivr.net/gh/alrra/browser-logos@75.0.1/src/firefox/firefox_64x64.png" width="32" height="32" alt="Firefox"> | Firefox Add-ons, for desktop and Android (in review) |
+| <img src="https://cdn.jsdelivr.net/gh/alrra/browser-logos@75.0.1/src/safari/safari_64x64.png" width="32" height="32" alt="Safari">    | App Store, for macOS, iOS and iPadOS (coming soon)   |
+
 Every time I open chatgpt.com it lands on the Work tab, and I never want Work. This extension switches it back to Chat.
-
-It works in Chrome, Firefox (desktop and Android) and Safari (macOS and iOS). All of them use the same content script. The Safari version is wrapped in an Xcode app, because that's the only way Safari takes extensions.
-
-## Why the site does this
-
-Which tab you get is decided by a server-side experiment and a recommendation cookie. If you pick Chat yourself, the site only remembers it for up to four hours, and on some accounts it ignores it completely, so every page load and every New chat lands on Work again. You can't fix that with cookies or local storage, so the extension just clicks the Chat button for you.
 
 ## What it does
 
@@ -18,67 +18,39 @@ Which tab you get is decided by a server-side experiment and a recommendation co
 - Finds the toggle by its English label. In other languages it falls back to matching the toggle's structure, which is less reliable.
 - Only runs on `https://chatgpt.com/*`, asks for no other permissions and makes no network requests.
 
-## Install
+## Why the site does this
 
-Grab the files from the [latest release](../../releases/latest).
+Which tab you get is decided by a server-side experiment and a recommendation cookie. If you pick Chat yourself, the site only remembers it for up to four hours, and on some accounts it ignores it completely, so every page load and every New chat lands on Work again. You can't fix that with cookies or local storage, so the extension just clicks the Chat button for you.
 
-- Firefox: download `chat-by-default-firefox.xpi` and drag it into a Firefox window, or open `about:addons`, click the gear and choose Install Add-on From File. Mozilla signs it, so it stays installed after a restart. Install a newer release the same way to update. If a release only has `chat-by-default-firefox.unsigned.xpi`, Mozilla hadn't signed it yet, so install Chat by Default from [addons.mozilla.org](https://addons.mozilla.org/firefox/addon/chat-by-default/) instead.
-- Chrome: unzip `chat-by-default-chrome.zip`, open `chrome://extensions`, turn on Developer mode, click Load unpacked and pick the unzipped folder. Outside the Chrome Web Store, that's the only way Chrome will take it.
-- Safari on macOS: if the release has `chat-by-default-macos.zip`, unzip it, move the app to Applications and open it once. Then turn the extension on in Safari → Settings → Extensions.
-- Safari on iOS: there's nothing to download here, since iOS only installs apps from the App Store or TestFlight.
+## Turn it on in Safari
 
-## Build
+Safari keeps a new extension off until you turn it on, and then asks before letting it run on chatgpt.com.
 
-```bash
-pnpm install
-pnpm run build            # typecheck, lint, prettier, then all three targets
-pnpm run build:chrome     # dist/chrome
-pnpm run build:firefox    # dist/firefox
-pnpm run build:safari     # dist/safari (used by the Xcode project)
-pnpm run lint:firefox     # web-ext lint on dist/firefox
-```
+- macOS: open the Chat by Default app once, then turn the extension on in Safari → Settings → Extensions. Allow it on chatgpt.com under Safari → Settings → Websites → Chat by Default. "Allow for One Day" stops working the next day without telling you.
+- iOS and iPadOS: go to Settings → Apps → Safari → Extensions → Chat by Default (on iOS 17, Settings → Safari → Extensions). Turn it on and set chatgpt.com to Allow.
 
-## Load a local build
+## Other downloads
 
-- Chrome: `chrome://extensions` → Developer mode → Load unpacked → `dist/chrome`. Reload any chatgpt.com tabs that were already open.
-- Firefox: `about:debugging` → This Firefox → Load Temporary Add-on → `dist/firefox/manifest.json`. It's removed again when Firefox quits.
-- Safari on macOS: run `pnpm run build:safari`, open `safari/Chat by Default/Chat by Default.xcodeproj` and run the `Chat by Default (macOS)` scheme. Turn the extension on in Safari → Settings → Extensions, then allow it on chatgpt.com under Safari → Settings → Websites → Chat by Default. If you pick "Allow for One Day", it stops working the next day without telling you. Local builds are unsigned, so you also need Safari → Develop → Developer Settings → Allow unsigned extensions, and Safari turns that off again every time it quits.
-- Safari on iOS: same project, `Chat by Default (iOS)` scheme. Pick your team under Signing & Capabilities for both the app and the extension target, and run it on your device. Then turn it on in Settings → Apps → Safari → Extensions → Chat by Default (on iOS 17 that's Settings → Safari → Extensions) and set chatgpt.com to Allow.
+Releases also have these files:
 
-The Xcode project points at `dist/safari` instead of keeping its own copy, so run `pnpm run build:safari` before building in Xcode. The project was generated by Xcode 27's `safari-web-extension-converter` and won't open in older versions of Xcode.
+- `chat-by-default-firefox.xpi`, signed by Mozilla. Drag it into a Firefox window, or open `about:addons`, click the gear and choose Install Add-on From File. If a release only has `chat-by-default-firefox.unsigned.xpi`, Mozilla hadn't signed it yet. Only Firefox Developer Edition and Nightly install that, after you set `xpinstall.signatures.required` to `false` in `about:config`.
+- `chat-by-default-chrome.zip`. Unzip it, open `chrome://extensions`, turn on Developer mode, click Load unpacked and pick the unzipped folder.
+- `chat-by-default-macos.zip`, the macOS app, notarized by Apple. Unzip it, move the app to Applications, then turn it on as above.
 
-## Releasing
+`gh attestation verify <file> --repo MegaManSec/chatgpt-chat-by-default` checks that a file was built by this repository's release workflow.
 
-Bump `version` in `package.json` and merge it to `main`. When that version has no `v` tag yet, the workflow builds everything, publishes to all of the places below and tags the release. If the secrets for one of them are missing, its job fails rather than being skipped, so a release made before every account is set up will have some failed jobs.
+## Privacy
 
-| Destination            | What happens                                                                                                                                                                                                                          | Secrets                                                                                           |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| GitHub Release         | Gets the Chrome zip and the Mozilla-signed Firefox xpi. It stays a draft until the notarized macOS app job has finished, then it's published.                                                                                         | `AMO_JWT_ISSUER`, `AMO_JWT_SECRET`                                                                |
-| addons.mozilla.org     | Only when the repository variable `AMO_LISTED` is `true`. Submits a listed version with its source code for review. If Mozilla signs it within 30 minutes, the signed xpi goes on the GitHub Release; otherwise an unsigned one does. | `AMO_JWT_ISSUER`, `AMO_JWT_SECRET`                                                                |
-| Chrome Web Store       | Uploads the zip and publishes it.                                                                                                                                                                                                     | `CWS_EXTENSION_ID`, `CWS_PUBLISHER_ID`, `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, `CWS_REFRESH_TOKEN` |
-| TestFlight / App Store | Uploads the iOS and macOS apps to App Store Connect.                                                                                                                                                                                  | `APPLE_TEAM_ID`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8`                                      |
-| Notarized macOS app    | Signs the app with Developer ID, notarizes and staples it, and attaches it to the GitHub Release.                                                                                                                                     | The four Apple secrets, plus `DEVELOPER_ID_P12` and `DEVELOPER_ID_P12_PASSWORD`                   |
+Chat by Default collects nothing and makes no network requests. See [PRIVACY.md](PRIVACY.md).
 
-Put the secrets in the `release` environment, not the repository secrets. Only runs on `main` can use it. Release files get [build provenance attestations](https://docs.github.com/actions/security-for-github-actions/using-artifact-attestations), and `gh attestation verify <file> --repo MegaManSec/chatgpt-chat-by-default` checks that a download came from this workflow.
+## Issues
 
-The macOS jobs run on GitHub's `xcode-27` runner, which is still in preview. `macos-26` only has Xcode 26, and that can't open this project.
+Report problems in [Issues](../../issues).
 
-### Chrome Web Store setup
+## Changelog
 
-Register as a developer and upload the first zip by hand. That creates the item, and it's where you fill in the listing and the privacy tab. Then create OAuth credentials with [chrome-webstore-upload-keys](https://github.com/fregante/chrome-webstore-upload-keys).
+See [Releases](../../releases).
 
-### addons.mozilla.org setup
+## Development
 
-Create API credentials under Tools → Manage API Keys. The first signed version creates the add-on on your account, and the first listed submission fills in the listing from `store/amo-metadata.json`. AMO never accepts the same version number twice, even across the listed and unlisted channels, so the first listed version has to be newer than the last unlisted xpi.
-
-### Apple setup
-
-You need a paid Apple Developer Program membership.
-
-Create an app record in App Store Connect for the bundle ID `hu.joshua.chat-by-default`, with both the iOS and macOS platforms. Then create an App Store Connect API key with the Admin role (or one that can use cloud-managed distribution certificates), and put the contents of its `.p8` file in `ASC_KEY_P8`.
-
-For TestFlight, CI archives the iOS app unsigned and the macOS app ad-hoc signed. `xcodebuild -exportArchive` then signs both with Apple's cloud-managed distribution certificate and uploads them, so no certificate has to be stored in GitHub.
-
-The notarized download does need your certificate. Export your Developer ID Application certificate from Keychain Access as a `.p12`, base64 encode it (`base64 -i cert.p12 | pbcopy`) into `DEVELOPER_ID_P12`, and put its password in `DEVELOPER_ID_P12_PASSWORD`. CI signs the macOS app with it while archiving, checks the signature, notarizes it with the same API key, staples the ticket and checks the result with `spctl`.
-
-To run the same steps locally, export the variables above, set `ASC_KEY_PATH` to the `.p8` file and `BUILD_NUMBER` to a build number App Store Connect hasn't seen yet, then run `scripts/release-safari.sh app-store` or `scripts/release-safari.sh developer-id`.
+Building, loading a local build and releasing are in [DEVELOPMENT.md](DEVELOPMENT.md).
