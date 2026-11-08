@@ -22,7 +22,7 @@
     "package:chrome": "mkdir -p artifacts/chrome && rm -f artifacts/chrome/chat-by-default-chrome.zip && cd dist/chrome && zip -qr ../../artifacts/chrome/chat-by-default-chrome.zip .",
     "package:source": "mkdir -p artifacts/firefox && git archive --format=zip --output=artifacts/firefox/source.zip HEAD",
     "publish:chrome": "chrome-webstore-upload --source=artifacts/chrome/chat-by-default-chrome.zip",
-    "publish:firefox": "web-ext sign --source-dir=dist/firefox --artifacts-dir=artifacts/firefox --channel=listed --amo-metadata=store/amo-metadata.json --upload-source-code=artifacts/firefox/source.zip --approval-timeout=0",
+    "publish:firefox": "web-ext sign --source-dir=dist/firefox --artifacts-dir=artifacts/firefox --channel=listed --amo-metadata=store/amo-metadata.json --upload-source-code=artifacts/firefox/source.zip --approval-timeout=1800000",
     "sign:firefox": "rm -f artifacts/firefox/*.xpi && web-ext sign --source-dir=dist/firefox --artifacts-dir=artifacts/firefox --channel=unlisted && mv artifacts/firefox/*.xpi artifacts/firefox/chat-by-default-firefox.xpi",
     "clean": "rimraf dist"
   },

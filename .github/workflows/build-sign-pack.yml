@@ -176,12 +176,14 @@ jobs:
           pnpm run publish:chrome
 
   firefox-amo:
-    needs: [version, build, safari]
+    needs: [version, release]
     if: needs.version.outputs.version != '' && vars.AMO_LISTED == 'true'
     runs-on: ubuntu-latest
     environment: release
     permissions:
-      contents: read
+      contents: write
+      id-token: write
+      attestations: write
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -198,8 +200,37 @@ jobs:
           WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
         run: |
+          set -o pipefail
           : "${WEB_EXT_API_KEY:?AMO_JWT_ISSUER is not set}" "${WEB_EXT_API_SECRET:?AMO_JWT_SECRET is not set}"
-          pnpm run package:source && pnpm run publish:firefox
+          pnpm run package:source
+          if ! pnpm run publish:firefox 2>&1 | tee "$RUNNER_TEMP/web-ext.log"; then
+            grep -q 'Approval: timeout exceeded' "$RUNNER_TEMP/web-ext.log" || exit 1
+            echo "::warning::Mozilla didn't sign it within 30 minutes, so the GitHub Release won't include the xpi."
+          fi
+
+      - name: Find the Mozilla-signed xpi
+        id: signed
+        run: |
+          xpi=$(ls artifacts/firefox/*.xpi 2>/dev/null | head -n 1)
+          if [ -n "$xpi" ]; then
+            mv "$xpi" artifacts/firefox/chat-by-default-firefox.xpi
+            echo "file=artifacts/firefox/chat-by-default-firefox.xpi" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Attest the Mozilla-signed xpi
+        if: steps.signed.outputs.file != ''
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ steps.signed.outputs.file }}
+
+      - name: Attach the Mozilla-signed xpi to the draft GitHub Release
+        if: steps.signed.outputs.file != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.version.outputs.version }}
+          FILE: ${{ steps.signed.outputs.file }}
+        run: gh release upload "v$VERSION" "$FILE" --clobber
 
   apple-testflight:
     needs: [version, build, safari]
@@ -287,7 +318,7 @@ jobs:
         run: gh release upload "v$VERSION" artifacts/safari/chat-by-default-macos.zip --clobber
 
   publish:
-    needs: [version, release, macos-notarized]
+    needs: [version, release, macos-notarized, firefox-amo]
     if: ${{ !cancelled() && needs.release.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
