@@ -205,31 +205,33 @@ jobs:
           pnpm run package:source
           if ! pnpm run publish:firefox 2>&1 | tee "$RUNNER_TEMP/web-ext.log"; then
             grep -q 'Approval: timeout exceeded' "$RUNNER_TEMP/web-ext.log" || exit 1
-            echo "::warning::Mozilla didn't sign it within 30 minutes, so the GitHub Release won't include the xpi."
+            echo "::warning::Mozilla didn't sign it within 30 minutes, so the GitHub Release gets an unsigned xpi."
           fi
 
-      - name: Find the Mozilla-signed xpi
-        id: signed
+      - name: Pick the signed xpi, or an unsigned one if Mozilla hasn't signed it yet
+        id: xpi
         run: |
-          xpi=$(ls artifacts/firefox/*.xpi 2>/dev/null | head -n 1)
-          if [ -n "$xpi" ]; then
-            mv "$xpi" artifacts/firefox/chat-by-default-firefox.xpi
-            echo "file=artifacts/firefox/chat-by-default-firefox.xpi" >> "$GITHUB_OUTPUT"
+          signed=$(ls artifacts/firefox/*.xpi 2>/dev/null | head -n 1)
+          if [ -n "$signed" ]; then
+            file=artifacts/firefox/chat-by-default-firefox.xpi
+            mv "$signed" "$file"
+          else
+            file=artifacts/firefox/chat-by-default-firefox.unsigned.xpi
+            (cd dist/firefox && zip -qr "../../$file" .)
           fi
+          echo "file=$file" >> "$GITHUB_OUTPUT"
 
-      - name: Attest the Mozilla-signed xpi
-        if: steps.signed.outputs.file != ''
+      - name: Attest the xpi
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: ${{ steps.signed.outputs.file }}
+          subject-path: ${{ steps.xpi.outputs.file }}
 
-      - name: Attach the Mozilla-signed xpi to the draft GitHub Release
-        if: steps.signed.outputs.file != ''
+      - name: Attach the xpi to the draft GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           VERSION: ${{ needs.version.outputs.version }}
-          FILE: ${{ steps.signed.outputs.file }}
+          FILE: ${{ steps.xpi.outputs.file }}
         run: gh release upload "v$VERSION" "$FILE" --clobber
 
   apple-testflight:
