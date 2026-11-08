@@ -1,0 +1,12 @@
+{
+  "categories": {
+    "firefox": ["other"],
+    "android": ["other"]
+  },
+  "summary": {
+    "en-US": "Opens chatgpt.com in Chat instead of Work."
+  },
+  "version": {
+    "license": "GPL-3.0-only"
+  }
+}
