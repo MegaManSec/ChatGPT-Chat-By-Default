@@ -49,7 +49,7 @@ The Xcode project points at `dist/safari` instead of keeping its own copy, so ru
 
 ## Releasing
 
-Bump `version` in `package.json` and push a matching tag, like `v1.0.1`. The workflow checks that the two match, builds everything and publishes to all of the places below. If the secrets for one of them are missing, its job fails rather than being skipped, so a release made before every account is set up will have some failed jobs.
+Bump `version` in `package.json` and merge it to `main`. When that version has no `v` tag yet, the workflow builds everything, publishes to all of the places below and tags the release. If the secrets for one of them are missing, its job fails rather than being skipped, so a release made before every account is set up will have some failed jobs.
 
 | Destination            | What happens                                                                                                                                            | Secrets                                                                                           |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
