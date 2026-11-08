@@ -113,6 +113,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
+          draft: true
           fail_on_unmatched_files: true
           files: |
             artifacts/chrome/chat-by-default-chrome.zip
@@ -254,8 +255,20 @@ jobs:
         with:
           subject-path: artifacts/safari/chat-by-default-macos.zip
 
-      - name: Attach notarized macOS app to GitHub Release
-        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
-        with:
-          fail_on_unmatched_files: true
-          files: artifacts/safari/chat-by-default-macos.zip
+      - name: Attach notarized macOS app to the draft GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" artifacts/safari/chat-by-default-macos.zip --clobber
+
+  publish:
+    needs: [release, macos-notarized]
+    if: ${{ !cancelled() && needs.release.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release edit "$GITHUB_REF_NAME" --draft=false --latest
