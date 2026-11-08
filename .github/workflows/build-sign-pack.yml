@@ -3,7 +3,6 @@ name: Build & Publish (Chrome, Firefox, Safari macOS + iOS)
 on:
   push:
     branches: [main]
-    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -12,7 +11,35 @@ permissions: {}
 env:
   XCODE_APP: /Applications/Xcode_27.2.app
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.gate.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check for a version bump
+        id: gate
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+            echo "v$version is already released."
+          else
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
     runs-on: ubuntu-latest
     permissions:
@@ -24,10 +51,6 @@ jobs:
           persist-credentials: false
 
       - uses: ./.github/actions/setup
-
-      - name: Check tag matches package.json version
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: test "${GITHUB_REF_NAME#v}" = "$(node -p "require('./package.json').version")"
 
       - name: Typecheck, lint, format
         run: pnpm run prebuild
@@ -71,8 +94,8 @@ jobs:
           CODE_SIGNING_ALLOWED=NO build
 
   release:
-    needs: [build, safari]
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [version, build, safari]
+    if: needs.version.outputs.version != ''
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -114,14 +137,16 @@ jobs:
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
           draft: true
+          tag_name: v${{ needs.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
           fail_on_unmatched_files: true
           files: |
             artifacts/chrome/chat-by-default-chrome.zip
             ${{ vars.AMO_LISTED != 'true' && 'artifacts/firefox/chat-by-default-firefox.xpi' || '' }}
 
   chrome-web-store:
-    needs: [build, safari]
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [version, build, safari]
+    if: needs.version.outputs.version != ''
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -151,8 +176,8 @@ jobs:
           pnpm run publish:chrome
 
   firefox-amo:
-    needs: [build, safari]
-    if: startsWith(github.ref, 'refs/tags/v') && vars.AMO_LISTED == 'true'
+    needs: [version, build, safari]
+    if: needs.version.outputs.version != '' && vars.AMO_LISTED == 'true'
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -177,8 +202,8 @@ jobs:
           pnpm run package:source && pnpm run publish:firefox
 
   apple-testflight:
-    needs: [build, safari]
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [version, build, safari]
+    if: needs.version.outputs.version != ''
     runs-on: xcode-27
     environment: release
     permissions:
@@ -212,8 +237,8 @@ jobs:
           scripts/release-safari.sh app-store
 
   macos-notarized:
-    needs: [release]
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [version, release]
+    if: needs.version.outputs.version != ''
     runs-on: xcode-27
     environment: release
     permissions:
@@ -258,10 +283,11 @@ jobs:
       - name: Attach notarized macOS app to the draft GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$GITHUB_REF_NAME" artifacts/safari/chat-by-default-macos.zip --clobber
+          VERSION: ${{ needs.version.outputs.version }}
+        run: gh release upload "v$VERSION" artifacts/safari/chat-by-default-macos.zip --clobber
 
   publish:
-    needs: [release, macos-notarized]
+    needs: [version, release, macos-notarized]
     if: ${{ !cancelled() && needs.release.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
@@ -271,4 +297,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh release edit "$GITHUB_REF_NAME" --draft=false --latest
+          VERSION: ${{ needs.version.outputs.version }}
+        run: gh release edit "v$VERSION" --draft=false --latest
