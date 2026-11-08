@@ -1,0 +1,261 @@
+name: Build & Publish (Chrome, Firefox, Safari macOS + iOS)
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  XCODE_APP: /Applications/Xcode_27.2.app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      - name: Check tag matches package.json version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: test "${GITHUB_REF_NAME#v}" = "$(node -p "require('./package.json').version")"
+
+      - name: Typecheck, lint, format
+        run: pnpm run prebuild
+
+      - name: Build and package Chrome
+        run: pnpm run build:chrome && pnpm run package:chrome
+
+      - name: Build and lint Firefox
+        run: pnpm run build:firefox && pnpm run lint:firefox
+
+  safari:
+    runs-on: xcode-27
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Select Xcode
+        run: sudo xcode-select -s "$XCODE_APP" && xcodebuild -version
+
+      - uses: ./.github/actions/setup
+
+      - name: Build Safari extension resources
+        run: pnpm run build:safari
+
+      - name: Compile macOS app (unsigned)
+        working-directory: safari/Chat by Default
+        run: >
+          xcodebuild -project "Chat by Default.xcodeproj" -scheme "Chat by Default (macOS)"
+          -configuration Release -destination 'generic/platform=macOS'
+          CODE_SIGNING_ALLOWED=NO build
+
+      - name: Compile iOS app for simulator (unsigned)
+        working-directory: safari/Chat by Default
+        run: >
+          xcodebuild -project "Chat by Default.xcodeproj" -scheme "Chat by Default (iOS)"
+          -configuration Release -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO build
+
+  release:
+    needs: [build, safari]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      - name: Build and package Chrome
+        run: pnpm run build:chrome && pnpm run package:chrome
+
+      - name: Build Firefox and sign it as a self-distributed (unlisted) add-on
+        if: vars.AMO_LISTED != 'true'
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          : "${WEB_EXT_API_KEY:?AMO_JWT_ISSUER is not set}" "${WEB_EXT_API_SECRET:?AMO_JWT_SECRET is not set}"
+          pnpm run build:firefox && pnpm run sign:firefox
+
+      - name: Attest Chrome zip
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: artifacts/chrome/chat-by-default-chrome.zip
+
+      - name: Attest Firefox xpi
+        if: vars.AMO_LISTED != 'true'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: artifacts/firefox/chat-by-default-firefox.xpi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
+        with:
+          fail_on_unmatched_files: true
+          files: |
+            artifacts/chrome/chat-by-default-chrome.zip
+            ${{ vars.AMO_LISTED != 'true' && 'artifacts/firefox/chat-by-default-firefox.xpi' || '' }}
+
+  chrome-web-store:
+    needs: [build, safari]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      - name: Build and package Chrome
+        run: pnpm run build:chrome && pnpm run package:chrome
+
+      - name: Upload and publish to Chrome Web Store
+        env:
+          EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          : "${EXTENSION_ID:?CWS_EXTENSION_ID is not set}" "${PUBLISHER_ID:?CWS_PUBLISHER_ID is not set}"
+          : "${CLIENT_ID:?CWS_CLIENT_ID is not set}" "${CLIENT_SECRET:?CWS_CLIENT_SECRET is not set}"
+          : "${REFRESH_TOKEN:?CWS_REFRESH_TOKEN is not set}"
+          pnpm run publish:chrome
+
+  firefox-amo:
+    needs: [build, safari]
+    if: startsWith(github.ref, 'refs/tags/v') && vars.AMO_LISTED == 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      - name: Build Firefox
+        run: pnpm run build:firefox
+
+      - name: Submit listed version to addons.mozilla.org
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          : "${WEB_EXT_API_KEY:?AMO_JWT_ISSUER is not set}" "${WEB_EXT_API_SECRET:?AMO_JWT_SECRET is not set}"
+          pnpm run package:source && pnpm run publish:firefox
+
+  apple-testflight:
+    needs: [build, safari]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: xcode-27
+    environment: release
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Select Xcode
+        run: sudo xcode-select -s "$XCODE_APP" && xcodebuild -version
+
+      - uses: ./.github/actions/setup
+
+      - name: Build Safari extension resources
+        run: pnpm run build:safari
+
+      - name: Archive and upload iOS and macOS apps to App Store Connect
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          BUILD_NUMBER: ${{ github.run_number }}.${{ github.run_attempt }}
+        run: |
+          : "${ASC_KEY_ID:?ASC_KEY_ID is not set}" "${ASC_KEY_P8:?ASC_KEY_P8 is not set}"
+          export ASC_KEY_PATH="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
+          trap 'rm -f "$ASC_KEY_PATH"' EXIT
+          printf '%s\n' "$ASC_KEY_P8" > "$ASC_KEY_PATH"
+          scripts/release-safari.sh app-store
+
+  macos-notarized:
+    needs: [release]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: xcode-27
+    environment: release
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Select Xcode
+        run: sudo xcode-select -s "$XCODE_APP" && xcodebuild -version
+
+      - uses: ./.github/actions/setup
+
+      - name: Build Safari extension resources
+        run: pnpm run build:safari
+
+      - name: Archive with Developer ID, notarize, staple
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          DEVELOPER_ID_P12: ${{ secrets.DEVELOPER_ID_P12 }}
+          DEVELOPER_ID_P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+          BUILD_NUMBER: ${{ github.run_number }}.${{ github.run_attempt }}
+        run: |
+          : "${ASC_KEY_ID:?ASC_KEY_ID is not set}" "${ASC_KEY_P8:?ASC_KEY_P8 is not set}"
+          export ASC_KEY_PATH="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
+          trap 'rm -f "$ASC_KEY_PATH"' EXIT
+          printf '%s\n' "$ASC_KEY_P8" > "$ASC_KEY_PATH"
+          scripts/release-safari.sh developer-id
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: artifacts/safari/chat-by-default-macos.zip
+
+      - name: Attach notarized macOS app to GitHub Release
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
+        with:
+          fail_on_unmatched_files: true
+          files: artifacts/safari/chat-by-default-macos.zip

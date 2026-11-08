@@ -1,0 +1,9 @@
+dist/
+node_modules/
+.DS_Store
+.eslintcache
+xcuserdata/
+*.xcuserstate
+DerivedData/
+artifacts/**/*.zip
+artifacts/**/*.xpi
