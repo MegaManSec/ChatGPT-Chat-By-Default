@@ -1,10 +1,10 @@
 # Chat by Default
 
-| Browser                                                                                                                               | Install from                                         |
-| ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| <img src="https://cdn.jsdelivr.net/gh/alrra/browser-logos@75.0.1/src/chrome/chrome_64x64.png" width="32" height="32" alt="Chrome">    | Chrome Web Store (coming soon)                       |
-| <img src="https://cdn.jsdelivr.net/gh/alrra/browser-logos@75.0.1/src/firefox/firefox_64x64.png" width="32" height="32" alt="Firefox"> | Firefox Add-ons, for desktop and Android (in review) |
-| <img src="https://cdn.jsdelivr.net/gh/alrra/browser-logos@75.0.1/src/safari/safari_64x64.png" width="32" height="32" alt="Safari">    | App Store, for macOS, iOS and iPadOS (coming soon)   |
+| Browser                                                                                                                               | Install from                                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| <img src="https://cdn.jsdelivr.net/gh/alrra/browser-logos@75.0.1/src/chrome/chrome_64x64.png" width="32" height="32" alt="Chrome">    | Chrome Web Store (coming soon)                                                                        |
+| <img src="https://cdn.jsdelivr.net/gh/alrra/browser-logos@75.0.1/src/firefox/firefox_64x64.png" width="32" height="32" alt="Firefox"> | [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/chat-by-default/), for desktop and Android |
+| <img src="https://cdn.jsdelivr.net/gh/alrra/browser-logos@75.0.1/src/safari/safari_64x64.png" width="32" height="32" alt="Safari">    | App Store, for macOS, iOS and iPadOS (coming soon)                                                    |
 
 Every time I open chatgpt.com it lands on the Work tab, and I never want Work. This extension switches it back to Chat.
 
