@@ -2,8 +2,7 @@ const TOGGLE = '[role="group"][aria-label="Composer mode"]';
 const TOGGLE_FALLBACK = '[role="group"]:has(> button[aria-pressed][class*="home-mode-toggle"])';
 const CHAT_LABEL = 'Chat';
 const USER_CHOICE_WINDOW_MS = 1500;
-const SETTLE_MS = 300;
-const MAX_CLICKS = 3;
+const MAX_CLICKS = 10;
 const CLICK_WINDOW_MS = 10_000;
 
 let path = location.pathname;
@@ -13,8 +12,6 @@ let keepWork = false;
 let gaveUp = false;
 let clicks: number[] = [];
 let lastToggleInputAt = Number.NEGATIVE_INFINITY;
-let workSince: number | null = null;
-let timer: ReturnType<typeof setTimeout> | undefined;
 
 function findGroup(from: Document | Element): Element | null {
   if (from instanceof Element) {
@@ -45,21 +42,18 @@ function check(): void {
   }
   const toggle = path.includes('/c/') ? null : findToggle();
   if (!toggle) {
-    workSince = null;
     return;
   }
   if (toggle.group !== group) {
     group = toggle.group;
     chatWasPressed = false;
     keepWork = false;
-    workSince = null;
   }
 
   const { chat } = toggle;
   if (chat.getAttribute('aria-pressed') === 'true') {
     chatWasPressed = true;
     keepWork = false;
-    workSince = null;
     return;
   }
   if (chatWasPressed && performance.now() - lastToggleInputAt < USER_CHOICE_WINDOW_MS) {
@@ -67,19 +61,10 @@ function check(): void {
   }
   chatWasPressed = false;
   if (keepWork || gaveUp || chat.disabled) {
-    workSince = null;
     return;
   }
 
   const now = performance.now();
-  workSince ??= now;
-  const wait = workSince + SETTLE_MS - now;
-  if (wait > 0) {
-    clearTimeout(timer);
-    timer = setTimeout(check, wait);
-    return;
-  }
-  workSince = null;
   clicks = clicks.filter((t) => now - t < CLICK_WINDOW_MS);
   if (clicks.length >= MAX_CLICKS) {
     gaveUp = true;
