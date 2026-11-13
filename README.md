@@ -1,10 +1,20 @@
-# Chat by Default
+<p align="center">
+  <img src="icons/icon128.png" alt="Chat by Default icon" width="128">
+</p>
 
-| Browser                                                                                                                                                                                 | Install from                                                                                                  |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| <a href="https://chromewebstore.google.com/detail/chat-by-default/fdfndhmkmdcmbnfhkdnmbddhdiidopod"><img src="assets/browser-logos/chrome.png" width="32" height="32" alt="Chrome"></a> | [Chrome Web Store](https://chromewebstore.google.com/detail/chat-by-default/fdfndhmkmdcmbnfhkdnmbddhdiidopod) |
-| <a href="https://addons.mozilla.org/firefox/addon/chat-by-default/"><img src="assets/browser-logos/firefox.png" width="32" height="32" alt="Firefox"></a>                               | [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/chat-by-default/), for desktop and Android         |
-| <a href="https://apps.apple.com/us/app/chat-by-default/6832335375"><img src="assets/browser-logos/safari.png" width="32" height="32" alt="Safari"></a>                                  | [App Store](https://apps.apple.com/us/app/chat-by-default/6832335375), for macOS, iOS and iPadOS              |
+<h1 align="center">Chat by Default</h1>
+
+<p align="center">Opens chatgpt.com in Chat instead of Work, in Chrome, Firefox and Safari.</p>
+
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/chat-by-default/fdfndhmkmdcmbnfhkdnmbddhdiidopod"><img src="assets/browser-logos/chrome.png" width="48" height="48" alt="Chrome"></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://addons.mozilla.org/firefox/addon/chat-by-default/"><img src="assets/browser-logos/firefox.png" width="48" height="48" alt="Firefox"></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://apps.apple.com/us/app/chat-by-default/6832335375"><img src="assets/browser-logos/safari.png" width="48" height="48" alt="Safari"></a>
+</p>
+
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/chat-by-default/fdfndhmkmdcmbnfhkdnmbddhdiidopod">Chrome Web Store</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="https://addons.mozilla.org/firefox/addon/chat-by-default/">Firefox Add-ons</a> (desktop and Android)&nbsp;&nbsp;·&nbsp;&nbsp;<a href="https://apps.apple.com/us/app/chat-by-default/6832335375">App Store</a> (macOS, iOS and iPadOS)
+</p>
 
 Every time I open chatgpt.com it lands on the Work tab, and I never want Work. This extension switches it back to Chat.
 
