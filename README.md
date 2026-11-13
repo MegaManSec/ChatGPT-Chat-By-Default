@@ -12,7 +12,7 @@ Every time I open chatgpt.com it lands on the Work tab, and I never want Work. T
 
 - Waits for the Chat/Work toggle on the home page. The server sends it disabled and it only becomes clickable once the page has loaded, so the extension waits for that before clicking Chat.
 - Does the same thing whenever the site flips back to Work, for example after New chat. Right after New chat the site switches back to Work a couple of times by itself, and the extension switches it back to Chat each time.
-- Leaves Work alone if you switch to it yourself, until you go to another page or start a new chat. It knows it was you because the switch comes right after your own click, tap or key press on the Chat/Work toggle.
+- Leaves Work alone if you switch to it yourself, until you go to another page or start a new chat. It knows it was you because you clicked the Work button yourself, with the mouse, a tap or the keyboard; the site switching on its own doesn't count.
 - Stops trying on a page after ten clicks in ten seconds, so it can't end up fighting the site in a loop.
 - Does nothing on conversation pages (`/c/...`), since they don't have the toggle.
 - Finds the toggle by its English label. In other languages it falls back to matching the toggle's structure, which is less reliable.
