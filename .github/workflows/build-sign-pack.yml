@@ -148,6 +148,7 @@ jobs:
         with:
           draft: true
           tag_name: v${{ needs.version.outputs.version }}
+          generate_release_notes: true
           target_commitish: ${{ github.sha }}
           fail_on_unmatched_files: true
           files: |
