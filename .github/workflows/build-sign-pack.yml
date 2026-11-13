@@ -3,7 +3,9 @@ name: Build & Publish (Chrome, Firefox, Safari macOS + iOS)
 on:
   push:
     branches: [main]
+    paths-ignore: ['**.md', 'assets/**', 'LICENSE']
   pull_request:
+    paths-ignore: ['**.md', 'assets/**', 'LICENSE']
   workflow_dispatch:
 
 permissions: {}
