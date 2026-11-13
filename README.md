@@ -4,7 +4,7 @@
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | <a href="https://chromewebstore.google.com/detail/chat-by-default/fdfndhmkmdcmbnfhkdnmbddhdiidopod"><img src="assets/browser-logos/chrome.png" width="32" height="32" alt="Chrome"></a> | [Chrome Web Store](https://chromewebstore.google.com/detail/chat-by-default/fdfndhmkmdcmbnfhkdnmbddhdiidopod) |
 | <a href="https://addons.mozilla.org/firefox/addon/chat-by-default/"><img src="assets/browser-logos/firefox.png" width="32" height="32" alt="Firefox"></a>                               | [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/chat-by-default/), for desktop and Android         |
-| <img src="assets/browser-logos/safari.png" width="32" height="32" alt="Safari">                                                                                                         | App Store, for macOS, iOS and iPadOS (coming soon)                                                            |
+| <a href="https://apps.apple.com/us/app/chat-by-default/6832335375"><img src="assets/browser-logos/safari.png" width="32" height="32" alt="Safari"></a>                                  | [App Store](https://apps.apple.com/us/app/chat-by-default/6832335375), for macOS, iOS and iPadOS              |
 
 Every time I open chatgpt.com it lands on the Work tab, and I never want Work. This extension switches it back to Chat.
 
