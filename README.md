@@ -16,7 +16,7 @@
   <a href="https://chromewebstore.google.com/detail/chat-by-default/fdfndhmkmdcmbnfhkdnmbddhdiidopod">Chrome Web Store</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="https://addons.mozilla.org/firefox/addon/chat-by-default/">Firefox Add-ons</a> (desktop and Android)&nbsp;&nbsp;·&nbsp;&nbsp;<a href="https://apps.apple.com/us/app/chat-by-default/6832335375">App Store</a> (macOS, iOS and iPadOS)
 </p>
 
-Every time I open chatgpt.com it lands on the Work tab, and I never want Work. This extension switches it back to Chat.
+Every time I open chatgpt.com it lands on the Work tab, and I never want Work. This extension switches it back to Chat. Read more about this plugin in [my blog post](https://joshua.hu/chatgpt-stop-fix-opening-in-work-mode-chat-default).
 
 ## What it does
 
