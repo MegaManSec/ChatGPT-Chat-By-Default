@@ -48,6 +48,7 @@ Safari keeps a new extension off until you turn it on, and then asks before lett
 1. Install Chat by Default from the App Store, or download the notarized app from [Other downloads](#other-downloads).
 2. Open the app once, then turn the extension on in Safari → Settings → Extensions.
 3. Allow it on chatgpt.com under Safari → Settings → Websites → Chat by Default. "Allow for One Day" stops working the next day without telling you.
+4. The toolbar button opens a small panel that shows whether the extension is allowed on chatgpt.com and opens the site. On other sites the button is dimmed, which is Safari's way of showing the extension has nothing to do there.
 
 ## Other downloads
 

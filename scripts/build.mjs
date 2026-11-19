@@ -25,6 +25,20 @@ await build({
   outfile: path.join(outDir, 'content.js'),
 });
 
+if (target === 'safari') {
+  await build({
+    entryPoints: ['src/popup.ts'],
+    bundle: true,
+    minify: false,
+    sourcemap: false,
+    platform: 'browser',
+    format: 'iife',
+    target: ESBUILD_TARGETS[target],
+    outfile: path.join(outDir, 'popup.js'),
+  });
+  fs.copyFileSync(path.join(root, 'src/popup.html'), path.join(outDir, 'popup.html'));
+}
+
 const readJson = (p) => JSON.parse(fs.readFileSync(path.join(root, p), 'utf8'));
 const pkg = readJson('package.json');
 const manifest = {

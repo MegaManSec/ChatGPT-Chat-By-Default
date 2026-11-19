@@ -92,6 +92,18 @@
                 "Chat by Default Extension (iOS)/resources",
                 "Chat by Default Extension (macOS)/resources",
               ],
+            }, {
+              "path": "../../../dist/safari/popup.html",
+              "target-membership": [
+                "Chat by Default Extension (iOS)/resources",
+                "Chat by Default Extension (macOS)/resources",
+              ],
+            }, {
+              "path": "../../../dist/safari/popup.js",
+              "target-membership": [
+                "Chat by Default Extension (iOS)/resources",
+                "Chat by Default Extension (macOS)/resources",
+              ],
             },
           ],
         }, {
